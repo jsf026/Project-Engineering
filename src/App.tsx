@@ -32,6 +32,20 @@ export default function App() {
   // Poll server health on load to check if GEMINI_API_KEY is available (with cache-busting to bypass browser-cached boot errors)
   const checkHealth = () => {
     setApiHealth(null);
+    const isNetlify = typeof window !== 'undefined' && (
+      window.location.hostname.includes('netlify.app') || 
+      window.location.hostname.includes('github.io') ||
+      window.location.hostname.includes('vercel.app')
+    );
+
+    if (isNetlify) {
+      setTimeout(() => {
+        setApiHealth({ status: 'static_decap', apiConfigured: false });
+        addLog('Detected static cloud host (Netlify/Vercel). Loaded premium standalone client engine.', 'success');
+      }, 300);
+      return;
+    }
+
     fetch(`/api/health?t=${Date.now()}`, { cache: 'no-store' })
       .then((res) => {
         if (!res.ok) {
@@ -137,24 +151,34 @@ export default function App() {
           {/* Secrets Config Status Check indicator */}
           <div className="flex items-center gap-4 text-xs font-mono">
             {apiHealth ? (
-              apiHealth.status === 'offline' ? (
-                <button
-                  onClick={checkHealth}
-                  className="flex items-center gap-1.5 text-rose-450 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 px-3 py-1 rounded-full cursor-pointer transition-all"
-                  title="Dev server is offline. Click to retry connection."
-                >
-                  <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse"></div>
-                  <span className="text-[10px] font-mono uppercase">Local Sync Offline (Retry)</span>
-                </button>
+              apiHealth.status === 'static_decap' || apiHealth.status === 'offline' ? (
+                <div className="flex items-center gap-2">
+                  <div 
+                    className="flex items-center gap-1.5 text-blue-400 bg-blue-500/10 border border-blue-500/20 px-3 py-1 rounded-full cursor-help hover:bg-blue-500/15 transition-all" 
+                    title="Standalone Sandbox Active (Static cloud deploy detected). Steps, flows, and simulation configs save automatically in your browser's LocalStorage."
+                  >
+                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
+                    <span className="text-[10px] font-mono uppercase tracking-wider font-semibold">Standalone Client Active</span>
+                  </div>
+                  {apiHealth.status === 'offline' && (
+                    <button
+                      onClick={checkHealth}
+                      className="text-[9px] font-mono text-slate-500 hover:text-slate-300 border border-slate-800 hover:border-slate-700 px-2 py-0.5 rounded transition cursor-pointer"
+                      title="Retry connecting to Node.js backend"
+                    >
+                      Retry sync
+                    </button>
+                  )}
+                </div>
               ) : apiHealth.apiConfigured ? (
                 <div className="flex items-center gap-1.5 text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full" title="Gemini AI active server-side">
                   <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
-                  <span className="text-[10px] font-mono uppercase">Local Sync Active</span>
+                  <span className="text-[10px] font-mono uppercase tracking-wider font-semibold">Local Sync Active</span>
                 </div>
               ) : (
                 <div className="flex items-center gap-1.5 text-amber-500 bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-full" title="Key missing. Using offline mocks.">
                   <div className="w-1.5 h-1.5 bg-amber-500 rounded-full"></div>
-                  <span className="text-[10px] font-mono uppercase text-amber-400">Offline Mocks</span>
+                  <span className="text-[10px] font-mono uppercase text-amber-400 tracking-wider font-semibold">Offline Mocks</span>
                 </div>
               )
             ) : (
