@@ -1,0 +1,8 @@
+{
+  "name": "TestFlow AI",
+  "description": "Visual test automation builder and code transpiler bridging manual test flows with Playwright, Selenium, Cypress, and Puppeteer.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
