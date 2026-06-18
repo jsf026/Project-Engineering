@@ -30,9 +30,15 @@ export default function App() {
   const [apiHealth, setApiHealth] = useState<{ status: string; apiConfigured: boolean } | null>(null);
 
   // Poll server health on load to check if GEMINI_API_KEY is available
-  useEffect(() => {
+  const checkHealth = () => {
+    setApiHealth(null);
     fetch('/api/health')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error('Response not OK');
+        }
+        return res.json();
+      })
       .then((data) => {
         setApiHealth(data);
         if (data.apiConfigured) {
@@ -44,7 +50,12 @@ export default function App() {
       .catch((err) => {
         console.warn('Network alert checking health:', err);
         addLog('Server connection offline. Running in pure static sandbox mode.', 'error');
+        setApiHealth({ status: 'offline', apiConfigured: false });
       });
+  };
+
+  useEffect(() => {
+    checkHealth();
   }, []);
 
   return (
@@ -126,7 +137,16 @@ export default function App() {
           {/* Secrets Config Status Check indicator */}
           <div className="flex items-center gap-4 text-xs font-mono">
             {apiHealth ? (
-              apiHealth.apiConfigured ? (
+              apiHealth.status === 'offline' ? (
+                <button
+                  onClick={checkHealth}
+                  className="flex items-center gap-1.5 text-rose-450 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 px-3 py-1 rounded-full cursor-pointer transition-all"
+                  title="Dev server is offline. Click to retry connection."
+                >
+                  <div className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse"></div>
+                  <span className="text-[10px] font-mono uppercase">Local Sync Offline (Retry)</span>
+                </button>
+              ) : apiHealth.apiConfigured ? (
                 <div className="flex items-center gap-1.5 text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full" title="Gemini AI active server-side">
                   <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
                   <span className="text-[10px] font-mono uppercase">Local Sync Active</span>
