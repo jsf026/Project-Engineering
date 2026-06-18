@@ -29,10 +29,10 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'record' | 'transpile' | 'analytics'>('record');
   const [apiHealth, setApiHealth] = useState<{ status: string; apiConfigured: boolean } | null>(null);
 
-  // Poll server health on load to check if GEMINI_API_KEY is available
+  // Poll server health on load to check if GEMINI_API_KEY is available (with cache-busting to bypass browser-cached boot errors)
   const checkHealth = () => {
     setApiHealth(null);
-    fetch('/api/health')
+    fetch(`/api/health?t=${Date.now()}`, { cache: 'no-store' })
       .then((res) => {
         if (!res.ok) {
           throw new Error('Response not OK');
